@@ -5,6 +5,18 @@ open.
 
 ---
 
+## 2026-10-03 — Published to GitHub
+
+- Repository: https://github.com/chepash/paradise_killer_mods (branch `main`).
+- The local `.git` from an earlier clone attempt was an empty skeleton (no HEAD/config), so
+  the repo was initialized locally and pushed to the empty remote.
+- Repo-local git config: author `Pavel Cherdantsev <cherdantsev.p@gmail.com>`; the shell's
+  HOME isn't the Windows profile, so `core.sshCommand` points at the SSH key and
+  known_hosts explicitly (same setup as the user's other repos).
+- `.gitattributes`: `* text=auto`, DLL/ZIP binary.
+
+---
+
 ## 2026-10-03 — Repository restructured: sources + build script, no binaries
 
 - The user plans to put the project on GitHub. The old `Win64\` folder was 21 MB, of which
