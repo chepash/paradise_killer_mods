@@ -1,0 +1,75 @@
+# PKMods — a mod pack for Paradise Killer
+
+Quality-of-life mods for **Paradise Killer** (PC / Steam, Unreal Engine 4 version), built on
+[UE4SS](https://github.com/UE4SS-RE/RE-UE4SS). Everything comes as one drop-in package with an
+in-game menu to switch each mod on or off.
+
+| Mod | What it does |
+|---|---|
+| **Air Control** | Steer while in the air (the game locks it). Strength 0.35 / 0.5 / 0.75 / 1.0, default 1.0. |
+| **Blood Crystal Radar** | While on: marks every Blood Crystal still lying in the loaded world, with distance; off-screen crystals get an arrow at the screen edge; the nearest one is gold. Off by default. |
+
+## Install
+
+1. Download `PKMods-<version>.zip` from the Releases page.
+2. Find the game folder: in Steam, right-click Paradise Killer → Manage → Browse local files.
+3. Extract the zip into `ParadiseKiller\Binaries\Win64\` (next to
+   `ParadiseKiller-Win64-Shipping.exe`). You should get `dwmapi.dll` next to the exe and a
+   `ue4ss` folder.
+4. Start the game. A UE4SS console window opens alongside it; that's expected.
+
+Saves aren't touched: the mods only change things in memory while the game runs, so your
+saves (and Steam Cloud sync) stay as they are.
+
+**Uninstall:** delete `dwmapi.dll` and the `ue4ss` folder from `Binaries\Win64\`.
+
+## Keys
+
+| Key | Action |
+|---|---|
+| F1 | Mod menu; number keys 1–9 switch items |
+| Ctrl+J | Air Control on/off |
+| Ctrl+B | Blood Crystal Radar on/off |
+| Ctrl+F9 | Diagnostics → `ue4ss\Mods\PKMods\pkmods.log` |
+| Ctrl+R | Reload all mods (UE4SS) |
+
+The menu lists these keys too. Choices are saved to `ue4ss\Mods\PKMods\settings.txt`; the
+menu key can be changed there (`menu.key = F2`).
+
+## Build from source
+
+Requirements: Windows, PowerShell 5.1+, internet access for the first build.
+
+```powershell
+.\build.ps1      # -> dist\Win64\ and dist\PKMods-<version>.zip
+.\install.ps1    # build + copy into the game (-GameDir "<path to Paradise Killer>")
+```
+
+`build.ps1` downloads a pinned UE4SS release (checked against a SHA-256 hash, cached in
+`.cache\`), keeps only the files the pack needs, applies two small config changes, and lays
+the contents of `package\` on top. Only `package\` and the scripts are in git.
+
+## Layout
+
+```
+package\ue4ss\Mods\
+  mods.txt, mods.json      which UE4SS mods load
+  PKMods\Scripts\
+    main.lua               feature list, menu, keys, main loop
+    core\                  util, settings, ui (widgets on the game HUD), menu, input
+    features\              one file per mod
+build.ps1, install.ps1, VERSION
+tools\                     research helpers (asset list from the .utoc, crash dump summary)
+CLAUDE.md, DEVLOG.md       developer notes and development history
+```
+
+A new mod is a new file in `features\` plus one line in `FEATURES` in `main.lua`; see
+[CLAUDE.md](CLAUDE.md).
+
+## Credits
+
+- [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS) by the UE4SS-RE team (MIT license; its
+  `LICENSE` ships in the package).
+- Air Control is based on the idea of an earlier community Air Control mod.
+
+Use at your own risk; single-player only.

@@ -1,0 +1,10 @@
+[
+    {
+        "mod_name": "PKMods",
+        "mod_enabled": true
+    },
+    {
+        "mod_name": "Keybinds",
+        "mod_enabled": true
+    }
+]
