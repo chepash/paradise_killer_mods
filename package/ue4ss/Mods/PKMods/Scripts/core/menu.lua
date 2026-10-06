@@ -1,4 +1,5 @@
--- In-game mod menu: a panel listing numbered items; the number key activates one.
+-- In-game mod menu: a panel listing numbered items; the number key activates
+-- one. More than 9 items are split into pages; 0 turns the page.
 local U  = require("core.util")
 local UI = require("core.ui")
 
@@ -10,15 +11,16 @@ local hotkeys = {}      -- { keys = "Ctrl+F9", text = "diagnostics" }: listed at
 local panel = {}        -- border, slot, text
 local shownText = nil
 
-local MAX_ITEMS = 9
+local PER_PAGE = 9
+local page = 1
+
+local function pageCount()
+    return math.max(1, math.ceil(#items / PER_PAGE))
+end
 
 -- item.label() returns the current text, item.activate() runs on key press,
 -- item.hint (e.g. "Ctrl+J") is shown next to the label.
 function M.add(item)
-    if #items >= MAX_ITEMS then
-        U.log("menu full, item ignored")
-        return
-    end
     items[#items + 1] = item
 end
 
@@ -49,15 +51,20 @@ UI.onBuild(function(host)
 end)
 
 local function render(keyName)
-    local lines = { string.format("PK MODS                        [%s] close", keyName), "" }
-    for i, it in ipairs(items) do
+    local pages = pageCount()
+    local title = pages > 1 and string.format("PK MODS   page %d/%d", page, pages) or "PK MODS"
+    local lines = { string.format("%-30s [%s] close", title, keyName), "" }
+    local first = (page - 1) * PER_PAGE
+    for n = 1, PER_PAGE do
+        local it = items[first + n]
+        if not it then break end
         local ok, label = pcall(it.label)
         if not ok then label = "?" end
         local hint = it.hint and ("      " .. it.hint) or ""
-        lines[#lines + 1] = string.format("%d   %s%s%s", i, it.indent and "      " or "", label, hint)
+        lines[#lines + 1] = string.format("%d   %s%s%s", n, it.indent and "      " or "", label, hint)
     end
     lines[#lines + 1] = ""
-    lines[#lines + 1] = "press a number to switch"
+    lines[#lines + 1] = "press a number to switch" .. (pages > 1 and ",  0 = next page" or "")
     if #hotkeys > 0 then
         lines[#lines + 1] = ""
         lines[#lines + 1] = "HOTKEYS"
@@ -74,8 +81,13 @@ end
 
 function M.press(n)
     if not M.open then return end
-    local it = items[n]
+    local it = items[(page - 1) * PER_PAGE + n]
     if it then it.activate() end
+end
+
+function M.nextPage()
+    if not M.open then return end
+    page = page % pageCount() + 1
 end
 
 function M.tick(keyName)

@@ -37,10 +37,26 @@ function U.className(o)
     return ok and n or "?"
 end
 
-function U.cdo(path)
-    local o = StaticFindObject(path)
-    if U.valid(o) then return o end
+-- Classes, structs and class default objects live for the whole session, so
+-- they're looked up once and remembered. StaticFindObject must not run during
+-- gameplay: called while the engine collects garbage it's a fatal error
+-- ("Illegal call to StaticFindObject() while collecting garbage!" crashed the
+-- game once), and a callback of ours can end up running in that window.
+local permanent = {}
+
+function U.findPermanent(path)
+    local o = permanent[path]
+    if o ~= nil and U.valid(o) then return o end
+    o = StaticFindObject(path)
+    if U.valid(o) then
+        permanent[path] = o
+        return o
+    end
     return nil
+end
+
+function U.cdo(path)
+    return U.findPermanent(path)
 end
 
 -- PlayerController lookup scans the whole object array, so failures are

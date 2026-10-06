@@ -67,8 +67,8 @@ function Patch([string]$rel, [string]$pattern, [string]$replacement) {
     if ($new -eq $text) { throw "Patch didn't apply to $rel ($pattern)" }
     [IO.File]::WriteAllText($p, $new, $utf8)
 }
-# Ctrl+R hot reload (off by default in this UE4SS build)
-Patch "ue4ss\UE4SS-settings.ini" "(?m)^EnableHotReloadSystem = 0" "EnableHotReloadSystem = 1"
+# Hot reload (Ctrl+R) stays OFF, as UE4SS ships it: with this game it hung the game
+# four times right after "All mods re-installed". Mods load fresh at game start.
 # ObjectDumper sat on Ctrl+J, which is our Air Control toggle; Num5 is taken by DumpJMAP
 Patch "ue4ss\Mods\Keybinds\Scripts\main.lua" '(\["ObjectDumper"\][^\n]*?)Key\.J, ' '${1}Key.NUM_FOUR,'
 

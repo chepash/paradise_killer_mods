@@ -7,7 +7,8 @@ in-game menu to switch each mod on or off.
 | Mod | What it does |
 |---|---|
 | **Air Control** | Steer while in the air (the game locks it). Strength 0.35 / 0.5 / 0.75 / 1.0, default 1.0. |
-| **Blood Crystal Radar** | While on: marks every Blood Crystal still lying in the loaded world, with distance; off-screen crystals get an arrow at the screen edge; the nearest one is gold. Off by default. |
+| **Fly Mode** | Unreal's built-in flying movement: no gravity, W/S fly where the camera looks, A/D strafe, Space up, Left Alt down; collision stays on. Speed 10 / 15 / 20 / 30 m/s (default 20); Space / Alt climb at half speed. Off by default. |
+| **Radar** | While on: marks items still lying in the loaded world, with icon and distance; off-screen items get an arrow at the screen edge; the nearest item of each kind is gold. Menu filters choose what it shows: **Blood Crystals**, **Crests** (crests and farm valves, the puzzle items), **Relics**, **Islands**, **Shrine Carvings**, **Music**, **Whisky**, **Transmissions**, **Ghost Items**, **Starlight Skins**, **Key Items**, **Shinji** (the Fox Messenger NPC), **Blood Shrines** (the 17 shrines to donate blood at), **Vending Machines**. Off by default. |
 
 ## Install
 
@@ -27,11 +28,12 @@ saves (and Steam Cloud sync) stay as they are.
 
 | Key | Action |
 |---|---|
-| F1 | Mod menu; number keys 1–9 switch items |
+| F1 | Mod menu; number keys 1–9 switch items, 0 turns the page |
 | Ctrl+J | Air Control on/off |
-| Ctrl+B | Blood Crystal Radar on/off |
+| Ctrl+B | Radar on/off (filters in the menu) |
+| Ctrl+F | Fly Mode on/off; while flying: Space up, Left Alt down |
+| Ctrl+= / Ctrl+- | Radar markers more visible / more transparent (10–100 %; numpad +/- too) |
 | Ctrl+F9 | Diagnostics → `ue4ss\Mods\PKMods\pkmods.log` |
-| Ctrl+R | Reload all mods (UE4SS) |
 
 The menu lists these keys too. Choices are saved to `ue4ss\Mods\PKMods\settings.txt`; the
 menu key can be changed there (`menu.key = F2`).

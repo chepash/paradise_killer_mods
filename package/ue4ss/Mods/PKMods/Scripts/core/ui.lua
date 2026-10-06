@@ -14,6 +14,8 @@ local STRAY_PREFIXES = { "PKM_", "BCR_" }  -- BCR_ = old standalone radar
 local PREFERRED      = { "YMKHUDBP_C", "HUD_TopCorner_C", "ARViewHud_BP_C" }
 local CHECK_MS       = 1000
 
+UI.generation = 0  -- bumped on every rebuild; widgets of older generations are gone
+
 UI.VISIBLE   = 3  -- ESlateVisibility::HitTestInvisible
 UI.COLLAPSED = 1
 
@@ -137,6 +139,7 @@ function UI.ensure()
     host = new
     U.log("UI attached to %s (opacity %.2f)", U.className(host.widget), host.opacity)
     live = {}
+    UI.generation = UI.generation + 1
     for _, fn in ipairs(builders) do
         local ok, err = pcall(fn, host)
         if not ok then U.log("ui build failed: %s", tostring(err)) end
@@ -153,7 +156,7 @@ end
 -- Creates a widget owned by the host's WidgetTree (not yet parented).
 function UI.construct(classPath, short)
     uid = uid + 1
-    local w = StaticConstructObject(StaticFindObject(classPath), host.widget.WidgetTree,
+    local w = StaticConstructObject(U.findPermanent(classPath), host.widget.WidgetTree,
         FName(string.format("%s%s_%s_%d", PREFIX, short, RUN_TOKEN, uid)))
     live[w:GetAddress()] = true
     return w

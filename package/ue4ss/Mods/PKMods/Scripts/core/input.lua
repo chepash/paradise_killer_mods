@@ -26,7 +26,13 @@ end
 
 local function isDown(pc, k)
     local ok, down = pcall(function() return pc:IsInputKeyDown({ KeyName = fname(k) }) end)
-    return ok and down
+    return ok and down == true
+end
+
+-- Is the key held right now (for continuous actions, e.g. flying up/down).
+function I.held(key)
+    local pc = U.getPC()
+    return pc ~= nil and isDown(pc, key)
 end
 
 -- fn runs on the press edge. ctrl = true requires Ctrl held, false/nil requires it released.
@@ -35,8 +41,10 @@ function I.bind(key, ctrl, fn)
 end
 
 -- Human-readable key combo for menus: ("J", true) -> "Ctrl+J".
+local KEY_NAMES = { Equals = "=", Hyphen = "-", Add = "Num+", Subtract = "Num-", Zero = "0" }
+
 function I.label(key, ctrl)
-    return (ctrl and "Ctrl+" or "") .. key
+    return (ctrl and "Ctrl+" or "") .. (KEY_NAMES[key] or key)
 end
 
 function I.ctrlDown(pc)

@@ -50,4 +50,16 @@ Get-ChildItem -Path $src -Recurse -File | ForEach-Object {
     Write-Host "  $rel"
     $copied++
 }
+# Our Scripts folder is mirrored exactly: scripts removed from the package are
+# removed from the game too (settings.txt and logs live one level up, untouched).
+$scriptsSrc = Join-Path $src "ue4ss\Mods\PKMods\Scripts"
+$scriptsDst = Join-Path $dst "ue4ss\Mods\PKMods\Scripts"
+Get-ChildItem -Path $scriptsDst -Recurse -File | ForEach-Object {
+    $rel = $_.FullName.Substring($scriptsDst.Length + 1)
+    if (-not (Test-Path (Join-Path $scriptsSrc $rel))) {
+        Remove-Item $_.FullName
+        Write-Host "  removed stale Scripts\$rel"
+    }
+}
+
 Write-Host "Installed to $dst ($copied file(s) updated)"

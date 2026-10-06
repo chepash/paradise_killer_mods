@@ -1,8 +1,9 @@
 -- PKMods — all Paradise Killer mods in one UE4SS package.
 --
---   F1          open / close the mod menu (number keys switch items)
+--   F1          open / close the mod menu (number keys switch items, 0 = next page)
 --   Ctrl + J    Air Control on/off
---   Ctrl + B    Blood Crystal Radar on/off
+--   Ctrl + B    Radar on/off (what it shows: filters in the menu)
+--   Ctrl + F    Fly Mode on/off (Space up, Left Alt down)
 --   Ctrl + F9   diagnostics to the UE4SS console / UE4SS.log / pkmods.log
 -- Ctrl alone is left to the game's own AR view.
 --
@@ -31,7 +32,9 @@ local Input = require("core.input")
 -- last call in a table constructor would add the filepath as an extra entry.
 local FEATURES = {
     (require("features.air_control")),
-    (require("features.crystal_radar")),
+    (require("features.radar")),
+    (require("features.fly")),
+    (require("features.meditation")),
 }
 
 local MENU_KEY = S.get("menu.key", "F1")  -- Unreal key name
@@ -67,7 +70,8 @@ for _, f in ipairs(FEATURES) do
     Menu.add({
         label = function() return string.format("[%s]  %s", f.enabled and "ON " or "OFF", f.name) end,
         activate = function() setEnabled(f, not f.enabled) end,
-        hint = f.toggleKey and Input.label(f.toggleKey.key, f.toggleKey.ctrl) or nil,
+        -- f.hint: how to use it, shown instead of the bare toggle key
+        hint = f.hint or (f.toggleKey and Input.label(f.toggleKey.key, f.toggleKey.ctrl)) or nil,
     })
     for _, opt in ipairs(f.options or {}) do
         Menu.add({ label = opt.label, activate = opt.activate, indent = true })
@@ -81,6 +85,7 @@ Input.bind(MENU_KEY, false, Menu.toggle)
 for i, k in ipairs(DIGITS) do
     Input.bind(k, false, function() Menu.press(i) end)
 end
+Input.bind("Zero", false, Menu.nextPage)
 
 for _, f in ipairs(FEATURES) do
     if f.toggleKey then
@@ -90,7 +95,46 @@ for _, f in ipairs(FEATURES) do
         Input.bind(hk.key, hk.ctrl, function()
             if f.enabled then hk.fn() end
         end)
-        Menu.addHotkey(Input.label(hk.key, hk.ctrl), (hk.desc or "?") .. " (" .. f.name .. ")")
+        if not hk.hidden then
+            Menu.addHotkey(Input.label(hk.key, hk.ctrl), (hk.desc or "?") .. " (" .. f.name .. ")")
+        end
+    end
+end
+
+-- What's around the player: every actor within NEARBY_M, nearest first, with
+-- its item data if it has one. Answers "what is this thing in front of me?"
+-- before picking it up. One full actor scan, only on Ctrl+F9.
+local NEARBY_M = 8
+
+local function nearby(pawn)
+    local o = pawn:K2_GetActorLocation()
+    local rows = {}
+    for _, a in ipairs(FindAllOf("Actor") or {}) do
+        if U.valid(a) then
+            local ok, l = pcall(function() return a:K2_GetActorLocation() end)
+            if ok and l then
+                local d = math.sqrt((l.X - o.X) ^ 2 + (l.Y - o.Y) ^ 2 + (l.Z - o.Z) ^ 2) / 100
+                if d <= NEARBY_M and a:GetAddress() ~= pawn:GetAddress() then
+                    rows[#rows + 1] = { a = a, d = d }
+                end
+            end
+        end
+    end
+    table.sort(rows, function(x, y) return x.d < y.d end)
+    U.log("-- Actors within %dm: %d", NEARBY_M, #rows)
+    for _, r in ipairs(rows) do
+        local okI, item = pcall(function()
+            local data = r.a.ItemData
+            if data and data:IsValid() then return data:GetFullName():match("([^%.]+)$") end
+            local coll = r.a.Collection
+            if coll and coll:IsValid() then
+                local ci = coll.CollectionItem
+                if ci and ci:IsValid() then return "collection " .. ci:GetFullName():match("([^%.]+)$") end
+            end
+            return nil
+        end)
+        U.log("  %5.1fm  %-45s %-40s %s", r.d, U.className(r.a), r.a:GetFName():ToString(),
+            (okI and item) and ("item " .. item) or "")
     end
 end
 
@@ -100,6 +144,7 @@ local function diag()
     U.log("PlayerController: %s", pc and pc:GetFullName() or "none")
     local pawn = U.getPawn()
     U.log("Pawn: %s", pawn and pawn:GetFullName() or "none")
+    if pawn then safe(nearby, pawn) end
     for _, f in ipairs(FEATURES) do
         U.log("-- %s (%s)", f.name, f.enabled and "ON" or "OFF")
         safe(f.diag)
@@ -120,7 +165,6 @@ local function diag()
 end
 Input.bind("F9", true, diag)
 Menu.addHotkey(Input.label("F9", true), "diagnostics -> pkmods.log")
-Menu.addHotkey("Ctrl+R", "reload all mods (UE4SS)")
 
 -- ---------------------------------------------------------------------------
 -- Level change / respawn
@@ -140,15 +184,12 @@ end)
 
 local lastErr = nil
 
--- Keys are polled every frame when UE4SS supports frame timers, so short
--- presses aren't missed; otherwise together with the 33 ms tick.
-local perFrameInput = LoopInGameThreadAfterFrames ~= nil
-if perFrameInput then
-    LoopInGameThreadAfterFrames(1, function() safe(Input.poll) end)
-end
-
+-- One timer only. Keys used to be polled by a second, per-frame timer
+-- (LoopInGameThreadAfterFrames); twice a Ctrl+R hot reload then hung the game
+-- right after "All mods re-installed", most likely the reload racing a
+-- callback that ran every frame. 33 ms is fast enough for key presses.
 local function tick()
-    if not perFrameInput then Input.poll() end
+    Input.poll()
     UI.tick()
     Menu.tick(MENU_KEY)
     for _, f in ipairs(FEATURES) do
@@ -170,6 +211,5 @@ U.gameDelay(3000, function()
     end
 end)
 
-U.log("Loaded %d features (%s timers, keys polled %s). Press %s for the mod menu.", #FEATURES,
-    LoopInGameThreadWithDelay and "game-thread" or "async",
-    perFrameInput and "every frame" or "every 33 ms", MENU_KEY)
+U.log("Loaded %d features (%s timers). Press %s for the mod menu.", #FEATURES,
+    LoopInGameThreadWithDelay and "game-thread" or "async", MENU_KEY)
